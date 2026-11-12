@@ -1,8 +1,11 @@
-# Speeder PDU CANopen object dictionary
+# VIIALA_PDU1_V0 CANopen object dictionary
 
 This dictionary describes the fifteen protected outputs and their current-sense
-channels. All manufacturer-specific telemetry is read-only. Output control is
-not exposed by this compile-only milestone.
+channels. Output requests and protection settings are writable through SDO.
+Every output boots OFF; actuation additionally requires CANopen Operational
+state and valid current telemetry. Losing either condition turns every output
+OFF and clears the request bitmap, so restoration cannot re-energize a channel
+without a new SDO request.
 
 ## Default TPDO broadcast
 
@@ -51,6 +54,15 @@ The broadcast consumes 40 classic CAN data frames per second. It is about
 | `0x3001:01..0F` | `uint16[15]` | AD7490 raw counts | `0xFFFF` |
 | `0x3002:01..0F` | `uint16[15]` | Peak output currents in mA | `0xFFFF` |
 | `0x3003:01..0F` | `uint32[15]` | Overcurrent trip counters | validity bit clear |
+| `0x2103` | `uint16` | Requested output bitmap, bits 0..14 | - |
+| `0x2104` | `uint16` | Fault-clear pulse bitmap; requested output must be OFF | - |
+| `0x2105` | `uint8` | Pending CANopen node ID, 1..127 | - |
+| `0x2106` | `uint16` | Pending bitrate: 125, 250, 500 or 1000 kbit/s | - |
+| `0x2107` | `uint8` | Write `0xA5` to apply communication settings | - |
+| `0x3100:01..0F` | `uint16[15]` | Continuous current limit in mA | - |
+| `0x3101:01..0F` | `uint16[15]` | Continuous overcurrent delay in ms | - |
+| `0x3102:01..0F` | `uint16[15]` | Inrush current limit in mA | - |
+| `0x3103:01..0F` | `uint16[15]` | Inrush allowance time in ms | - |
 
 The existing CANopenNode diagnostic objects at `0x2100..0x2102` remain
 available.
@@ -69,10 +81,9 @@ available.
 | 21 | Reset, brownout and CAN diagnostic counters valid |
 | 22..31 | Reserved |
 
-At this milestone only bit 0 is set. SPI and the AD7490 are still disabled, so
-current and raw-ADC values deliberately remain unavailable. When all fifteen
-current channels have valid samples, the telemetry helper calculates total
-current and sets bit 16.
+The firmware samples all fifteen AD7490 current channels every 5 ms. Until a
+valid scan completes the current values remain `0xFFFF`, output requests cannot
+energize hardware, and the total-current value remains `0xFFFFFFFF`.
 
 ## Hardware measurement boundary
 
@@ -80,6 +91,23 @@ The updated schematic connects fifteen NCV84045 current-sense outputs to the
 AD7490. The ADC is 12-bit with a 2.5 V reference. Its sixteenth input is not a
 battery-voltage channel. `0x2007` therefore stays unavailable until a verified
 voltage-measurement source is added.
+
+The initial conversion uses the NCV84045 typical current-sense ratio of 1230
+and the fitted 301 ohm sense resistor: approximately 2.49 mA per ADC count.
+This is a nominal engineering conversion, not a production calibration. Raw
+counts at `0x3001` are retained so each hardware revision can be calibrated.
+
+Default protection per output is 5.0 A continuous, 100 ms continuous trip
+delay, 8.0 A inrush, and 500 ms inrush allowance. Accepted ranges are
+0.1–10 A, 1–5000 ms continuous delay, 0.1–10 A inrush and 0–10000 ms inrush
+allowance. An inrush-limit exceedance trips on the next 5 ms sample; after the
+inrush window, the continuous limit must remain exceeded for its configured
+delay. Faults latch OFF and require an OFF request before clearing.
+
+Node ID and bitrate changes are deliberately RAM-only because the 256 KiB
+internal flash layout has no safe settings erase sector. They survive the
+CANopen communication reset but revert to node 10 at 500 kbit/s after power
+loss.
 
 ## Useful future motorcycle signals
 
@@ -103,6 +131,7 @@ the PDU must not continue treating stale motorcycle data as current data.
 - `objdict/objdict.eds`: canonical commissioning description for variant A.
 - `objdict/speeder_pdu_A001.eds` and `speeder_pdu_B001.eds`: matching variant
   files.
-- `objdict/objdict.xml`: editable CANopenEditor project.
+- `objdict/objdict.xml`: retained legacy CANopenEditor project; the EDS and
+  generated C files are authoritative for the new writable objects.
 - `objdict/CO_OD.c` and `CO_OD.h`: firmware representation.
 - `src/pdu_telemetry.c`: safe runtime publication helper.

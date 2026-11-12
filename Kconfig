@@ -1,4 +1,4 @@
-menu "SPEEDER PDU application"
+menu "VIIALA PDU application"
 
 config CANOPEN_NODE_ID
 	int "CANopen node ID"

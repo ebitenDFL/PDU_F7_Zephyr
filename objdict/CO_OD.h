@@ -70,7 +70,7 @@ typedef timeOfDay_t TIME_DIFFERENCE;
    DEVICE INFO:
       VendorName:
       VendorNumber    0
-      ProductName:    SPEEDER PDU F7
+      ProductName:    VIIALA_PDU1_V0
       ProductNumber:  0
  ******************************************************************************/
 
@@ -93,7 +93,7 @@ typedef timeOfDay_t TIME_DIFFERENCE;
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-   #define CO_OD_NoOfElements             65
+   #define CO_OD_NoOfElements             74
 
 
 /*******************************************************************************
@@ -523,6 +523,21 @@ typedef timeOfDay_t TIME_DIFFERENCE;
 /*2102 */
 	#define OD_2102_buttonPressCounter                          0x2102
 
+/*2103 */
+	#define OD_2103_outputRequest                               0x2103
+
+/*2104 */
+	#define OD_2104_faultClearRequest                           0x2104
+
+/*2105 */
+	#define OD_2105_pendingNodeID                               0x2105
+
+/*2106 */
+	#define OD_2106_pendingBitrate_kbps                         0x2106
+
+/*2107 */
+	#define OD_2107_commApply                                   0x2107
+
 /*3000 */
 	#define OD_3000_outputCurrent_mA                            0x3000
 
@@ -534,6 +549,18 @@ typedef timeOfDay_t TIME_DIFFERENCE;
 
 /*3003 */
 	#define OD_3003_overCurrentTripCount                        0x3003
+
+/*3100 */
+	#define OD_3100_currentLimit_mA                             0x3100
+
+/*3101 */
+	#define OD_3101_currentTripTime_ms                          0x3101
+
+/*3102 */
+	#define OD_3102_inrushLimit_mA                              0x3102
+
+/*3103 */
+	#define OD_3103_inrushTime_ms                               0x3103
 
 /*******************************************************************************
    STRUCTURES FOR VARIABLES IN DIFFERENT MEMORY LOCATIONS
@@ -600,10 +627,19 @@ struct sCO_OD_RAM {
 /*200f      */ UNSIGNED32 telemetryValidity;
 /*2100      */ OCTET_STRING errorStatusBits[10];
 /*2102      */ UNSIGNED32 buttonPressCounter;
+/*2103      */ UNSIGNED16 outputRequest;
+/*2104      */ UNSIGNED16 faultClearRequest;
+/*2105      */ UNSIGNED8 pendingNodeID;
+/*2106      */ UNSIGNED16 pendingBitrate_kbps;
+/*2107      */ UNSIGNED8 commApply;
 /*3000      */ UNSIGNED16 outputCurrent_mA[15];
 /*3001      */ UNSIGNED16 currentSenseRaw[15];
 /*3002      */ UNSIGNED16 peakCurrent_mA[15];
 /*3003      */ UNSIGNED32 overCurrentTripCount[15];
+/*3100      */ UNSIGNED16 currentLimit_mA[15];
+/*3101      */ UNSIGNED16 currentTripTime_ms[15];
+/*3102      */ UNSIGNED16 inrushLimit_mA[15];
+/*3103      */ UNSIGNED16 inrushTime_ms[15];
 
 	UNSIGNED32 LastWord;
 };
@@ -801,6 +837,21 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 /*2102, Data Type: UNSIGNED32 */
 	#define OD_buttonPressCounter                               CO_OD_RAM.buttonPressCounter
 
+/*2103, Data Type: UNSIGNED16 */
+	#define OD_outputRequest                                    CO_OD_RAM.outputRequest
+
+/*2104, Data Type: UNSIGNED16 */
+	#define OD_faultClearRequest                                CO_OD_RAM.faultClearRequest
+
+/*2105, Data Type: UNSIGNED8 */
+	#define OD_pendingNodeID                                    CO_OD_RAM.pendingNodeID
+
+/*2106, Data Type: UNSIGNED16 */
+	#define OD_pendingBitrate_kbps                              CO_OD_RAM.pendingBitrate_kbps
+
+/*2107, Data Type: UNSIGNED8 */
+	#define OD_commApply                                        CO_OD_RAM.commApply
+
 /*3000, Data Type: UNSIGNED16, Array[15] */
 	#define OD_outputCurrent_mA                                 CO_OD_RAM.outputCurrent_mA
 	#define ODL_outputCurrent_mA_arrayLength                    15
@@ -816,5 +867,21 @@ extern struct sCO_OD_EEPROM CO_OD_EEPROM;
 /*3003, Data Type: UNSIGNED32, Array[15] */
 	#define OD_overCurrentTripCount                             CO_OD_RAM.overCurrentTripCount
 	#define ODL_overCurrentTripCount_arrayLength                15
+
+/*3100, Data Type: UNSIGNED16, Array[15] */
+	#define OD_currentLimit_mA                                  CO_OD_RAM.currentLimit_mA
+	#define ODL_currentLimit_mA_arrayLength                     15
+
+/*3101, Data Type: UNSIGNED16, Array[15] */
+	#define OD_currentTripTime_ms                               CO_OD_RAM.currentTripTime_ms
+	#define ODL_currentTripTime_ms_arrayLength                  15
+
+/*3102, Data Type: UNSIGNED16, Array[15] */
+	#define OD_inrushLimit_mA                                   CO_OD_RAM.inrushLimit_mA
+	#define ODL_inrushLimit_mA_arrayLength                      15
+
+/*3103, Data Type: UNSIGNED16, Array[15] */
+	#define OD_inrushTime_ms                                    CO_OD_RAM.inrushTime_ms
+	#define ODL_inrushTime_ms_arrayLength                       15
 
 #endif

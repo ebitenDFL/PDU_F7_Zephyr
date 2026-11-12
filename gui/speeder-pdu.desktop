@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=SPEEDER PDU Workbench
-Comment=CANopen diagnostics and signed firmware updates for the SPEEDER PDU
+Name=VIIALA PDU Workbench
+Comment=CANopen output control, diagnostics and firmware updates for VIIALA_PDU1_V0
 Exec=/home/dfl/Projects/PDU_F7_Zephyr/gui/run_pdu_gui.sh
 Icon=utilities-system-monitor
 Terminal=false

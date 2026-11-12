@@ -25,11 +25,8 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	/*
-	 * These nodes are consumed only by the safe bring-up application.
-	 * The NCV84045 inputs have hardware pull-downs, so reset/high-Z is OFF.
-	 */
-	safe_controls: safe_controls {
+	/* The NCV84045 inputs have hardware pull-downs: reset/high-Z is OFF. */
+	power_outputs: power_outputs {
 		compatible = "gpio-leds";
 
 		out1  { gpios = <&gpioc 0  GPIO_ACTIVE_HIGH>; label = "OUT1 enable";  };
@@ -47,13 +44,17 @@
 		out13 { gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; label = "OUT13 enable"; };
 		out14 { gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>; label = "OUT14 enable"; };
 		out15 { gpios = <&gpioc 15 GPIO_ACTIVE_HIGH>; label = "OUT15 enable"; };
+	};
 
-		cs_en {
+	current_sense_controls {
+		compatible = "gpio-leds";
+
+		current_sense_enable: cs_en {
 			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "NCV84045 current-sense enable";
 		};
 
-		adc_cs {
+		adc_cs: adc_cs {
 			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
 			label = "AD7490 chip select";
 		};
@@ -125,7 +126,9 @@
 };
 
 &spi1 {
-	status = "disabled";
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usart2 {

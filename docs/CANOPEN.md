@@ -1,14 +1,12 @@
-# CANopen milestone
+# CANopen functional firmware
 
-This compile-only milestone enables CAN1 on PB8/PB9 at 500 kbit/s and uses
-CANopen node ID 10. All 15 power-output controls and the current-sense enable
-are configured inactive before CAN is placed in normal mode.
+CAN1 runs on PB8/PB9 at 500 kbit/s with default node ID 10. The fixed device
+name at `0x1008:00` is `VIIALA_PDU1_V0`. All outputs initialize inactive.
 
-Four TPDOs broadcast all fifteen output-current channels in mA plus the active
-output-state bitmap at 10 Hz. Until the SPI/ADC driver is implemented, current
-values are the explicit unavailable value `0xFFFF`; they are never presented as
-false zero-current measurements. See `docs/OBJECT_DICTIONARY.md` for the byte
-layout, SDO indexes, units and validity bits.
+Four TPDOs broadcast all fifteen measured output-current channels in mA plus
+the active-output bitmap at 10 Hz. Current acquisition uses the AD7490 on SPI1;
+the protection loop samples every 5 ms. See `docs/OBJECT_DICTIONARY.md` for
+limits, SDO indexes, units and validity bits.
 
 ## Image identity
 
@@ -18,8 +16,20 @@ returns the active image identity:
 - variant A: ASCII `A001`
 - variant B: ASCII `B001`
 
-The fixed device name at `0x1008:00` is `SPEEDER_PDU_F7`, and hardware version
-`0x1009:00` is `HW20`.
+Hardware version `0x1009:00` remains `HW20`.
+
+## Writable control and communication objects
+
+`0x2103` requests outputs, `0x2104` clears latched faults, and `0x3100..0x3103`
+configure continuous and inrush limits. Writes are accepted by SDO. Outputs
+can only become active while the node is Operational and current telemetry is
+valid. Leaving Operational state or losing a valid ADC scan clears all output
+requests; outputs do not automatically return when the condition recovers.
+
+Write the pending node ID to `0x2105`, the bitrate in kbit/s to `0x2106`, then
+write `0xA5` to `0x2107`. The node performs a CANopen communication reset.
+These settings are volatile and revert to node 10 / 500 kbit/s after power
+loss.
 
 Matching commissioning files are `objdict/speeder_pdu_A001.eds` and
 `objdict/speeder_pdu_B001.eds`. `objdict/objdict.xml` is the editable dictionary

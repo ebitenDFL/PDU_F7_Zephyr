@@ -30,7 +30,8 @@ VIIALA Zephyr board definitions were not used as hardware authority.
 - The first application configures all fifteen output enables and CS_EN with
   `GPIO_OUTPUT_INACTIVE` and does not contain any path that turns them on.
 - The AD7490 chip select is active-low and is initialized inactive (high).
-- CAN, SPI, UART, flash writes, and persistent storage are disabled.
+- CAN1 and SPI1/AD7490 are enabled. UART and persistent settings storage remain disabled.
+- Outputs boot inactive and require Operational state, valid ADC data and an explicit SDO request.
 - No flash/program command is part of this milestone.
 
 ## Conflicts resolved

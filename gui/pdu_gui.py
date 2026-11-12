@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SPEEDER PDU Linux CANopen dashboard."""
+"""VIIALA PDU Linux CANopen dashboard."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def fmt_unknown(value: int, unknown: int, suffix: str = "") -> str:
 class PduGUI:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("SPEEDER PDU · CANopen Workbench")
+        self.root.title("VIIALA_PDU1_V0 · CANopen Workbench")
         self.root.geometry("1280x850")
         self.root.minsize(1080, 700)
         self.root.configure(bg=BG)
@@ -73,6 +73,14 @@ class PduGUI:
         self.sdo_index = tk.StringVar(value="100A")
         self.sdo_subindex = tk.StringVar(value="00")
         self.sdo_result = tk.StringVar(value="—")
+        self.sdo_write_data = tk.StringVar(value="")
+        self.selected_channel = tk.IntVar(value=1)
+        self.limit_amps = tk.StringVar(value="5.0")
+        self.trip_time_ms = tk.StringVar(value="100")
+        self.inrush_amps = tk.StringVar(value="8.0")
+        self.inrush_time_ms = tk.StringVar(value="500")
+        self.pending_node_id = tk.IntVar(value=10)
+        self.pending_bitrate = tk.IntVar(value=500)
 
         self._configure_style()
         self._build_ui()
@@ -117,8 +125,8 @@ class PduGUI:
         header.pack(fill="x", pady=(0, 14))
         title_box = ttk.Frame(header)
         title_box.pack(side="left")
-        ttk.Label(title_box, text="SPEEDER PDU", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(title_box, text="CANopen workbench · safe firmware controls", style="Muted.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text="VIIALA_PDU1_V0", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(title_box, text="CANopen workbench · monitored output control", style="Muted.TLabel").pack(anchor="w")
 
         connect_box = ttk.Frame(header)
         connect_box.pack(side="right")
@@ -194,12 +202,28 @@ class PduGUI:
         ttk.Button(controls, text="Reset node", command=self._confirm_reset).pack(fill="x", pady=3)
         ttk.Label(
             controls,
-            text="Power-output commands are intentionally unavailable in this safe firmware milestone.",
+            text="Outputs start OFF and require Operational state, valid current telemetry and an explicit request. Overcurrent trips latch OFF.",
             style="PanelMuted.TLabel",
             wraplength=470,
         ).pack(anchor="w", pady=(18, 0))
 
     def _build_channels(self) -> None:
+        controls = ttk.Frame(self.channels_tab, style="Panel.TFrame", padding=12)
+        controls.pack(fill="x", pady=(0, 10))
+        labels = (("Output", self.selected_channel, 1, 15), ("Continuous A", self.limit_amps, None, None),
+                  ("Trip delay ms", self.trip_time_ms, None, None), ("Inrush A", self.inrush_amps, None, None),
+                  ("Inrush time ms", self.inrush_time_ms, None, None))
+        for col, (label, variable, low, high) in enumerate(labels):
+            ttk.Label(controls, text=label, style="PanelMuted.TLabel").grid(row=0, column=col, sticky="w", padx=4)
+            if low is None:
+                ttk.Entry(controls, textvariable=variable, width=12).grid(row=1, column=col, padx=4)
+            else:
+                ttk.Spinbox(controls, from_=low, to=high, textvariable=variable, width=7).grid(row=1, column=col, padx=4)
+        ttk.Button(controls, text="Load channel", command=self._load_channel_settings).grid(row=1, column=5, padx=4)
+        ttk.Button(controls, text="Save limits", command=self._save_channel_settings).grid(row=1, column=6, padx=4)
+        ttk.Button(controls, text="Request ON/OFF", style="Accent.TButton", command=self._toggle_output).grid(row=1, column=7, padx=4)
+        ttk.Button(controls, text="Clear fault", command=self._clear_channel_fault).grid(row=1, column=8, padx=4)
+
         columns = ("channel", "actual", "commanded", "current", "raw", "peak", "trips", "fault")
         self.channel_tree = ttk.Treeview(self.channels_tab, columns=columns, show="headings")
         headings = ("Output", "Actual", "Command", "Current", "ADC raw", "Peak", "Trips", "Fault")
@@ -224,7 +248,19 @@ class PduGUI:
         ttk.Label(fields, text="Sub-index", style="PanelMuted.TLabel").grid(row=0, column=1, sticky="w")
         ttk.Entry(fields, textvariable=self.sdo_subindex, width=8).grid(row=1, column=1, padx=(0, 8))
         ttk.Button(fields, text="Read", command=self._read_sdo).grid(row=1, column=2)
+        ttk.Label(fields, text="Write bytes (hex, little-endian)", style="PanelMuted.TLabel").grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 0))
+        ttk.Entry(fields, textvariable=self.sdo_write_data, width=25).grid(row=3, column=0, columnspan=2, sticky="ew", padx=(0, 8))
+        ttk.Button(fields, text="Write", command=self._write_sdo).grid(row=3, column=2)
         ttk.Label(left, textvariable=self.sdo_result, style="Panel.TLabel", font=("DejaVu Sans Mono", 11), wraplength=510).pack(anchor="w", pady=(10, 22))
+
+        ttk.Label(left, text="COMMUNICATION SETTINGS (VOLATILE)", style="Panel.TLabel", font=("DejaVu Sans", 11, "bold")).pack(anchor="w")
+        comm = ttk.Frame(left, style="Panel.TFrame")
+        comm.pack(fill="x", pady=(10, 16))
+        ttk.Label(comm, text="Node ID", style="PanelMuted.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Spinbox(comm, from_=1, to=127, textvariable=self.pending_node_id, width=7).grid(row=1, column=0, padx=(0, 8))
+        ttk.Label(comm, text="Bitrate kbit/s", style="PanelMuted.TLabel").grid(row=0, column=1, sticky="w")
+        ttk.Combobox(comm, values=(125, 250, 500, 1000), textvariable=self.pending_bitrate, width=9, state="readonly").grid(row=1, column=1, padx=(0, 8))
+        ttk.Button(comm, text="Apply & reset communication", command=self._apply_communication).grid(row=1, column=2)
 
         ttk.Label(left, text="DIAGNOSTIC SUMMARY", style="Panel.TLabel", font=("DejaVu Sans", 11, "bold")).pack(anchor="w")
         self.diagnostic_text = tk.Text(left, height=15, bg=PANEL_2, fg=TEXT, insertbackground=TEXT, relief="flat", font=("DejaVu Sans Mono", 10), padx=10, pady=10)
@@ -289,6 +325,69 @@ class PduGUI:
             return
         self.sdo_result.set("Reading…")
         self._send_command("sdo_read", index, subindex)
+
+    def _write_sdo(self) -> None:
+        try:
+            index = int(self.sdo_index.get().strip(), 16)
+            subindex = int(self.sdo_subindex.get().strip(), 16)
+            data = bytes.fromhex(self.sdo_write_data.get().strip())
+            if not data:
+                raise ValueError("empty data")
+        except ValueError:
+            messagebox.showerror("Invalid SDO write", "Use a hex index/sub-index and bytes such as F4 01 for uint16 value 500.")
+            return
+        if messagebox.askyesno("Confirm SDO write", f"Write {data.hex(' ').upper()} to 0x{index:04X}:{subindex:02X}?"):
+            self._send_command("sdo_write", index, subindex, data)
+
+    def _load_channel_settings(self) -> None:
+        if self.last_snapshot is None:
+            return
+        i = self.selected_channel.get() - 1
+        self.limit_amps.set(f"{self.last_snapshot.current_limits_ma[i] / 1000:.3f}")
+        self.trip_time_ms.set(str(self.last_snapshot.current_trip_times_ms[i]))
+        self.inrush_amps.set(f"{self.last_snapshot.inrush_limits_ma[i] / 1000:.3f}")
+        self.inrush_time_ms.set(str(self.last_snapshot.inrush_times_ms[i]))
+
+    def _save_channel_settings(self) -> None:
+        try:
+            channel = self.selected_channel.get()
+            values = (round(float(self.limit_amps.get()) * 1000), int(self.trip_time_ms.get()),
+                      round(float(self.inrush_amps.get()) * 1000), int(self.inrush_time_ms.get()))
+            if not (100 <= values[0] <= 10000 and 1 <= values[1] <= 5000 and
+                    100 <= values[2] <= 10000 and 0 <= values[3] <= 10000):
+                raise ValueError
+        except ValueError:
+            messagebox.showerror("Invalid limits", "Continuous/inrush: 0.1–10 A; trip delay: 1–5000 ms; inrush time: 0–10000 ms.")
+            return
+        if messagebox.askyesno("Save protection limits", f"Write protection settings for output {channel}?"):
+            self._send_command("channel_settings", channel, *values)
+
+    def _toggle_output(self) -> None:
+        if self.last_snapshot is None:
+            return
+        channel = self.selected_channel.get()
+        bit = 1 << (channel - 1)
+        turning_on = not bool(self.last_snapshot.output_request & bit)
+        if turning_on and self.last_snapshot.nmt_state != "Operational":
+            messagebox.showerror("Node not Operational", "Start the CANopen node before requesting an output ON.")
+            return
+        action = "ON" if turning_on else "OFF"
+        if messagebox.askyesno(f"Request output {action}", f"Request output {channel} {action}?\n\nVerify the connected load and current limits first."):
+            bitmap = (self.last_snapshot.output_request | bit) if turning_on else (self.last_snapshot.output_request & ~bit)
+            self._send_command("sdo_write", 0x2103, 0, int(bitmap).to_bytes(2, "little"))
+
+    def _clear_channel_fault(self) -> None:
+        channel = self.selected_channel.get()
+        if messagebox.askyesno("Clear latched fault", f"Clear output {channel} fault? The output request must be OFF."):
+            self._send_command("fault_clear", channel)
+
+    def _apply_communication(self) -> None:
+        node_id, bitrate = self.pending_node_id.get(), self.pending_bitrate.get()
+        prompt = (f"Change this running session to node {node_id} at {bitrate} kbit/s?\n\n"
+                  "This is RAM-only and reverts to node 10 / 500 kbit/s after power loss. "
+                  "The GUI will disconnect; change can0 bitrate before reconnecting if needed.")
+        if messagebox.askyesno("Apply communication settings", prompt):
+            self._send_command("communication", node_id, bitrate)
 
     def _select_image(self) -> None:
         path = filedialog.askopenfilename(title="Select signed MCUboot image", filetypes=(("MCUboot binary", "*.bin"), ("All files", "*")))
@@ -360,6 +459,34 @@ class PduGUI:
                         index, subindex = args
                         data = self.client.upload(int(index), int(subindex))
                         self.events.put(("sdo", int(index), int(subindex), data))
+                    elif name == "sdo_write" and self.client:
+                        index, subindex, data = args
+                        self.client.download(int(index), int(subindex), bytes(data))
+                        self.events.put(("message", f"SDO write complete: 0x{int(index):04X}:{int(subindex):02X}"))
+                        next_poll = 0.0
+                    elif name == "channel_settings" and self.client:
+                        channel, limit_ma, trip_ms, inrush_ma, inrush_ms = map(int, args)
+                        for index, value in ((0x3100, limit_ma), (0x3101, trip_ms),
+                                             (0x3102, inrush_ma), (0x3103, inrush_ms)):
+                            self.client.download(index, channel, value.to_bytes(2, "little"))
+                        self.events.put(("message", f"Output {channel} protection settings saved"))
+                        next_poll = 0.0
+                    elif name == "fault_clear" and self.client:
+                        channel = int(args[0])
+                        bit = 1 << (channel - 1)
+                        self.client.download(0x2104, 0, bit.to_bytes(2, "little"))
+                        self.client.download(0x2104, 0, b"\x00\x00")
+                        self.events.put(("message", f"Output {channel} fault-clear pulse sent"))
+                        next_poll = 0.0
+                    elif name == "communication" and self.client:
+                        node_id, bitrate = map(int, args)
+                        self.client.download(0x2105, 0, node_id.to_bytes(1, "little"))
+                        self.client.download(0x2106, 0, bitrate.to_bytes(2, "little"))
+                        self.client.download(0x2107, 0, b"\xA5")
+                        self.client.disconnect()
+                        self.client = None
+                        self.events.put(("disconnected",))
+                        self.events.put(("message", "Communication reset applied; reconnect with the new settings"))
                     elif name == "firmware_update" and self.client:
                         identity = self.client.firmware_update(str(args[0]), self._update_worker_progress)
                         self.events.put(("update_done", identity))
@@ -467,7 +594,7 @@ class PduGUI:
             issues.append(f"flash status 0x{snap.flash_status:08X}")
         if snap.heartbeat_age_s is None or snap.heartbeat_age_s > 2.5:
             issues.append("heartbeat stale")
-        self.health_text.set("Healthy · outputs inactive" if not issues else " · ".join(issues))
+        self.health_text.set("Healthy · current protection active" if not issues else " · ".join(issues))
         self.status_text.set("Live CANopen data" + (f" · {len(snap.read_errors)} unavailable reads" if snap.read_errors else ""))
 
         for index in range(OUTPUT_COUNT):
@@ -492,6 +619,7 @@ class PduGUI:
             f"Validity bitmap   : 0x{snap.telemetry_validity:08X}\n"
             f"Output states     : 0x{snap.output_states:04X}\n"
             f"Output commanded  : 0x{snap.output_commanded:04X}\n"
+            f"Output requested  : 0x{snap.output_request:04X}\n"
             f"Output faults     : 0x{snap.output_faults:04X}\n"
             f"Overcurrent       : 0x{snap.overcurrent_faults:04X}\n"
             f"Open load         : 0x{snap.open_load_faults:04X}\n"
@@ -501,6 +629,8 @@ class PduGUI:
             f"Program control   : 0x{snap.program_control:02X}\n"
             f"Flash status      : 0x{snap.flash_status:08X}\n"
             f"Reset reason      : 0x{snap.reset_reason:04X}\n"
+            f"Pending node ID   : {snap.pending_node_id}\n"
+            f"Pending bitrate   : {snap.pending_bitrate_kbps} kbit/s\n"
         )
         self.diagnostic_text.configure(state="normal")
         self.diagnostic_text.delete("1.0", "end")

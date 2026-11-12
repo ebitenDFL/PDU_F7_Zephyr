@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CANopen transport and data model for the SPEEDER PDU desktop GUI."""
+"""CANopen transport and data model for the VIIALA PDU desktop GUI."""
 
 from __future__ import annotations
 
@@ -81,6 +81,10 @@ class PduSnapshot:
     overcurrent_faults: int = 0
     open_load_faults: int = 0
     output_disabled: int = 0
+    output_request: int = 0
+    pending_node_id: int = 10
+    pending_bitrate_kbps: int = 500
+    communication_apply: int = 0
     total_current_ma: int = 0xFFFFFFFF
     supply_voltage_mv: int = 0xFFFF
     board_temperature_dc: int = 0x7FFF
@@ -97,6 +101,10 @@ class PduSnapshot:
     raw_adc: list[int] = field(default_factory=lambda: [0xFFFF] * OUTPUT_COUNT)
     peak_currents_ma: list[int] = field(default_factory=lambda: [0xFFFF] * OUTPUT_COUNT)
     trip_counts: list[int] = field(default_factory=lambda: [0] * OUTPUT_COUNT)
+    current_limits_ma: list[int] = field(default_factory=lambda: [5000] * OUTPUT_COUNT)
+    current_trip_times_ms: list[int] = field(default_factory=lambda: [100] * OUTPUT_COUNT)
+    inrush_limits_ma: list[int] = field(default_factory=lambda: [8000] * OUTPUT_COUNT)
+    inrush_times_ms: list[int] = field(default_factory=lambda: [500] * OUTPUT_COUNT)
     read_errors: list[str] = field(default_factory=list)
 
 
@@ -224,6 +232,10 @@ class PduCanClient:
             ("overcurrent_faults", 0x2003, 0, decode_u, 0),
             ("open_load_faults", 0x2004, 0, decode_u, 0),
             ("output_disabled", 0x2005, 0, decode_u, 0),
+            ("output_request", 0x2103, 0, decode_u, 0),
+            ("pending_node_id", 0x2105, 0, decode_u, self.node_id),
+            ("pending_bitrate_kbps", 0x2106, 0, decode_u, 500),
+            ("communication_apply", 0x2107, 0, decode_u, 0),
             ("total_current_ma", 0x2006, 0, decode_u, 0xFFFFFFFF),
             ("supply_voltage_mv", 0x2007, 0, decode_u, 0xFFFF),
             ("board_temperature_dc", 0x2008, 0, decode_i, 0x7FFF),
@@ -246,6 +258,10 @@ class PduCanClient:
                 ("raw_adc", 0x3001, 0xFFFF),
                 ("peak_currents_ma", 0x3002, 0xFFFF),
                 ("trip_counts", 0x3003, 0),
+                ("current_limits_ma", 0x3100, 5000),
+                ("current_trip_times_ms", 0x3101, 100),
+                ("inrush_limits_ma", 0x3102, 8000),
+                ("inrush_times_ms", 0x3103, 500),
             )
             for attr, index, default in arrays:
                 values = [

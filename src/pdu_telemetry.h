@@ -27,6 +27,7 @@ enum pdu_telemetry_validity {
 
 void pdu_telemetry_init_safe(void);
 void pdu_telemetry_tick(void);
+void pdu_telemetry_invalidate_currents(void);
 void pdu_telemetry_set_output_states(uint16_t actual, uint16_t commanded);
 void pdu_telemetry_set_fault_masks(uint16_t all_faults,
 				   uint16_t over_current,

@@ -14,6 +14,8 @@ zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/objdict)
 
 target_sources(app PRIVATE
 	src/main.c
+	src/pdu_adc.c
+	src/pdu_control.c
 	src/pdu_telemetry.c
 	objdict/CO_OD.c
 )

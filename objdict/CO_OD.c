@@ -31,7 +31,7 @@ struct sCO_OD_ROM CO_OD_ROM = {
 /*1005*/ 0x0080L,
 /*1006*/ 0x0000L,
 /*1007*/ 0x0000L,
-/*1008*/ { 'S', 'P', 'E', 'E', 'D', 'E', 'R', '_', 'P', 'D', 'U', '_', 'F', '7' },
+/*1008*/ { 'V', 'I', 'I', 'A', 'L', 'A', '_', 'P', 'D', 'U', '1', '_', 'V', '0' },
 /*1009*/ { 'H', 'W', '2', '0' },
 #if defined(CONFIG_PDU_IMAGE_VARIANT_A)
 /*100a*/ { 'A', '0', '0', '1' },
@@ -100,6 +100,11 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*200f*/ 0x00000001L,
 /*2100*/ { 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L, 0x0L },
 /*2102*/ 0x0000L,
+/*2103*/ 0x0000L,
+/*2104*/ 0x0000L,
+/*2105*/ 0x0aL,
+/*2106*/ 0x01f4L,
+/*2107*/ 0x00L,
 /*3000*/ { 0xffffL, 0xffffL, 0xffffL, 0xffffL, 0xffffL,
 	     0xffffL, 0xffffL, 0xffffL, 0xffffL, 0xffffL,
 	     0xffffL, 0xffffL, 0xffffL, 0xffffL, 0xffffL },
@@ -112,6 +117,18 @@ struct sCO_OD_RAM CO_OD_RAM = {
 /*3003*/ { 0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L,
 	     0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L,
 	     0x0000L, 0x0000L, 0x0000L, 0x0000L, 0x0000L },
+/*3100*/ { 5000, 5000, 5000, 5000, 5000,
+	     5000, 5000, 5000, 5000, 5000,
+	     5000, 5000, 5000, 5000, 5000 },
+/*3101*/ { 100, 100, 100, 100, 100,
+	     100, 100, 100, 100, 100,
+	     100, 100, 100, 100, 100 },
+/*3102*/ { 8000, 8000, 8000, 8000, 8000,
+	     8000, 8000, 8000, 8000, 8000,
+	     8000, 8000, 8000, 8000, 8000 },
+/*3103*/ { 500, 500, 500, 500, 500,
+	     500, 500, 500, 500, 500,
+	     500, 500, 500, 500, 500 },
 
 	CO_OD_FIRST_LAST_WORD,
 };
@@ -311,7 +328,7 @@ struct sCO_OD_EEPROM CO_OD_EEPROM = {
 /*******************************************************************************
    OBJECT DICTIONARY
 *******************************************************************************/
-const CO_OD_entry_t CO_OD[65] = {
+const CO_OD_entry_t CO_OD[74] = {
 
 	{ 0x1000, 0x00, 0x85, 4, (void *)&CO_OD_ROM.deviceType },
 	{ 0x1001, 0x00, 0x26, 1, (void *)&CO_OD_RAM.errorRegister },
@@ -374,8 +391,17 @@ const CO_OD_entry_t CO_OD[65] = {
 	{ 0x2100, 0x00, 0x26, 10, (void *)&CO_OD_RAM.errorStatusBits },
 	{ 0x2101, 0x00, 0xa7, 4, (void *)&CO_OD_EEPROM.powerOnCounter },
 	{ 0x2102, 0x00, 0xfe, 4, (void *)&CO_OD_RAM.buttonPressCounter },
+	{ 0x2103, 0x00, 0x8e, 2, (void *)&CO_OD_RAM.outputRequest },
+	{ 0x2104, 0x00, 0x8e, 2, (void *)&CO_OD_RAM.faultClearRequest },
+	{ 0x2105, 0x00, 0x0e, 1, (void *)&CO_OD_RAM.pendingNodeID },
+	{ 0x2106, 0x00, 0x8e, 2, (void *)&CO_OD_RAM.pendingBitrate_kbps },
+	{ 0x2107, 0x00, 0x0e, 1, (void *)&CO_OD_RAM.commApply },
 	{ 0x3000, 0x0f, 0xe6, 2, (void *)&CO_OD_RAM.outputCurrent_mA[0] },
 	{ 0x3001, 0x0f, 0xa6, 2, (void *)&CO_OD_RAM.currentSenseRaw[0] },
 	{ 0x3002, 0x0f, 0xa6, 2, (void *)&CO_OD_RAM.peakCurrent_mA[0] },
 	{ 0x3003, 0x0f, 0xa6, 4, (void *)&CO_OD_RAM.overCurrentTripCount[0] },
+	{ 0x3100, 0x0f, 0x8e, 2, (void *)&CO_OD_RAM.currentLimit_mA[0] },
+	{ 0x3101, 0x0f, 0x8e, 2, (void *)&CO_OD_RAM.currentTripTime_ms[0] },
+	{ 0x3102, 0x0f, 0x8e, 2, (void *)&CO_OD_RAM.inrushLimit_mA[0] },
+	{ 0x3103, 0x0f, 0x8e, 2, (void *)&CO_OD_RAM.inrushTime_ms[0] },
 };

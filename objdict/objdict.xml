@@ -66,7 +66,7 @@ bit    31: set to 0</description>
     <CANopenObject index="1007" name="Synchronous window length" objectType="VAR" memoryType="ROM" dataType="0x07" accessType="rw" PDOmapping="no" defaultValue="0" subNumber="0" disabled="false" TPDOdetectCOS="false">
       <description>bit 0-31:  window length after SYNC when PDOS must be transmitted in µs, (0 = not used)</description>
     </CANopenObject>
-    <CANopenObject index="1008" name="Manufacturer device name" objectType="VAR" memoryType="ROM" dataType="0x09" accessType="const" PDOmapping="no" defaultValue="SPEEDER_PDU_F7" subNumber="0" disabled="false" TPDOdetectCOS="false">
+    <CANopenObject index="1008" name="Manufacturer device name" objectType="VAR" memoryType="ROM" dataType="0x09" accessType="const" PDOmapping="no" defaultValue="VIIALA_PDU1_V0" subNumber="0" disabled="false" TPDOdetectCOS="false">
       <description>Name of the manufacturer as string</description>
     </CANopenObject>
     <CANopenObject index="1009" name="Manufacturer hardware version" objectType="VAR" memoryType="ROM" dataType="0x09" accessType="const" PDOmapping="no" defaultValue="HW20" subNumber="0" disabled="false" TPDOdetectCOS="false">
@@ -1294,7 +1294,7 @@ The counter can be reset by writing the value 0.</description>
     <DeviceIdentity>
       <vendorName />
       <vendorNumber>0</vendorNumber>
-      <productName>SPEEDER PDU F7</productName>
+      <productName>VIIALA_PDU1_V0</productName>
       <productNumber>0</productNumber>
       <productText>
         <description />

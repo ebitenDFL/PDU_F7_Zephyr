@@ -200,3 +200,29 @@ Independent post-update reads confirmed program control 1, flash status 0,
 output bitmap `0x0000`, Pre-operational heartbeat `0x7F`, and zero CAN error
 counters. This remains an overwrite-only layout without rollback, and the
 development signing key must not be used for production.
+
+# Functional current-protection A/B build
+
+Compile-only verification performed on 2026-11-12. Nothing was flashed and no
+output was activated during this verification.
+
+- Device identity: `VIIALA_PDU1_V0`; hardware `HW20`
+- Variant identities: `A001` and `B001`
+- AD7490 current sampling: all 15 NCV84045 current-sense channels every 5 ms
+- Application flash: 57,984 / 65,152 bytes (89.00%)
+- Application RAM: 12,416 / 196,608 bytes (6.32%)
+- Signed update size: 58,320 bytes each
+- A signed-bin SHA-256:
+  `d30274d3afb74b6b6b6a29bbd66d627c45752bded0598ce1b114a6bd4116fed2`
+- B signed-bin SHA-256:
+  `685d5c59401192bef77d45869a01cf85058ec121064c3d806e052ef52c1f6e40`
+- Both EDS variants import successfully with 74 objects.
+- GUI Python syntax and all protocol-helper unit tests pass.
+- The temporary STM32F722RC flash-layout patch was removed cleanly after the
+  build; the shared Zephyr driver has no remaining modification.
+
+The protection logic has not yet been electrically validated against a known
+load. Before normal use, bench-test raw ADC counts, current scaling, each output
+mapping, continuous-limit timing, inrush timing and latched-fault recovery.
+The images use MCUboot's public development key and are for controlled bench
+use only.

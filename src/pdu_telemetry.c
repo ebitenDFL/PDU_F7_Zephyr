@@ -71,6 +71,19 @@ void pdu_telemetry_tick(void)
 	CO_UNLOCK_OD();
 }
 
+void pdu_telemetry_invalidate_currents(void)
+{
+	CO_LOCK_OD();
+	for (size_t i = 0; i < PDU_OUTPUT_COUNT; ++i) {
+		OD_outputCurrent_mA[i] = PDU_TELEMETRY_UNKNOWN_U16;
+		OD_currentSenseRaw[i] = PDU_TELEMETRY_UNKNOWN_U16;
+	}
+	OD_totalCurrent_mA = PDU_TELEMETRY_UNKNOWN_U32;
+	OD_telemetryValidity &= ~(PDU_ALL_CURRENT_VALID_MASK |
+				  PDU_VALID_TOTAL_CURRENT);
+	CO_UNLOCK_OD();
+}
+
 void pdu_telemetry_set_output_states(uint16_t actual, uint16_t commanded)
 {
 	CO_LOCK_OD();

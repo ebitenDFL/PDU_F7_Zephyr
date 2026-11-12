@@ -1,22 +1,24 @@
-# Speeder PDU - standalone Zephyr CANopen project
+# VIIALA_PDU1_V0 - standalone Zephyr CANopen project
 
 This repository is an out-of-tree Zephyr application with its own custom board
 definition. It does not modify the Zephyr source tree or any existing project.
 
-The initial hardware milestone is deliberately non-actuating:
+The functional firmware keeps a fail-safe startup boundary:
 
 - all 15 power-output enables initialize inactive;
-- current-sense enable initializes inactive;
+- current-sense enable and AD7490 sampling are initialized before output control;
 - ADC chip select initializes inactive;
 - CAN1 is enabled on PB8/PB9 at 500 kbit/s with CANopen node ID 10;
 - the CANopen dictionary, EDS/XML sources and 10 Hz current/state TPDO map are included;
-- SPI, UART, flash writes, persistent storage, and firmware download are disabled;
+- output requests require CANopen Operational state and valid current telemetry;
+- configurable continuous and inrush current protection latches a tripped output OFF;
+- node-ID and bitrate changes are available through volatile SDO settings;
 - there are no automatic runner, flash, or debug commands in the project.
 
 The normal standalone `A001` image was first programmed and byte-verified on
 2026-11-11 using an external STLINK-V3SET after the target was identified as an
-STM32F72x/73x with 256 KiB flash. No output-control path is present. The
-hash-only MCUboot update artifacts remain explicitly unsafe to flash. See
+STM32F72x/73x with 256 KiB flash. The hash-only MCUboot update artifacts remain
+explicitly unsafe to flash. See
 `hardware/BUILD_VERIFICATION.md`.
 
 Two variants are available. SDO upload `0x100A:00` returns `A001` for image A
@@ -50,7 +52,7 @@ west build -p always -b speeder_pdu_f7/stm32f722xx \
 ```
 
 These commands compile only. They do not invoke the connected ST-LINK. Do not
-connect or activate loads during this bring-up milestone.
+connect or activate loads during compile-only verification.
 
 ### Temporary A001 SWO diagnostic build
 
@@ -79,23 +81,23 @@ After a successful build, verify:
 ```sh
 grep -E 'CONFIG_(CANOPEN_NODE_ID|CAN_DEFAULT_BITRATE|PDU_IMAGE_VARIANT)' \
   build_canopen_a/zephyr/.config build_canopen_b/zephyr/.config
-strings build_canopen_a/zephyr/zephyr.bin | grep 'SPEEDER_PDU_F7HW20A001'
-strings build_canopen_b/zephyr/zephyr.bin | grep 'SPEEDER_PDU_F7HW20B001'
+strings build_canopen_a/zephyr/zephyr.bin | grep 'VIIALA_PDU1_V0'
+strings build_canopen_b/zephyr/zephyr.bin | grep 'VIIALA_PDU1_V0'
 ```
 
-Expected: both builds succeed, CAN is 500 kbit/s, node ID is 10, the respective
-A/B identity is embedded, flash remains limited to 256 KiB, and no flash-write
-or program-download feature is selected.
+Expected: both builds succeed, CAN defaults to 500 kbit/s and node ID 10, the
+respective A/B identity is embedded, and flash remains limited to 256 KiB.
 
 The first verified build is recorded in `hardware/BUILD_VERIFICATION.md`.
 
 ## Linux CANopen GUI
 
-The `gui/` directory contains the SPEEDER PDU CANopen Workbench for the PEAK
+The `gui/` directory contains the VIIALA PDU CANopen Workbench for the PEAK
 PCAN-USB adapter on Linux. It shows live identity, heartbeat, diagnostics and
 all fifteen telemetry channels, includes an SDO inspector and CAN traffic view,
-and supports guarded signed MCUboot updates. It intentionally provides no
-output-switching controls while the safe firmware has no output-control object.
+and supports guarded output requests, current protection configuration,
+confirmed raw SDO writes, volatile communication changes and signed MCUboot
+updates.
 
 Launch it with:
 

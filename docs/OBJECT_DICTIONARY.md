@@ -98,6 +98,11 @@ This is a nominal engineering conversion, not a production calibration. Raw
 counts at `0x3001` are retained so each hardware revision can be calibrated.
 Inactive outputs report zero current even when the raw ADC channel carries an
 NCV84045 OFF-state diagnostic level. The raw value remains visible at `0x3001`.
+Active channels use the VI_PDU3 acquisition method: three settling reads,
+sixteen samples, and rejection of the minimum and maximum before averaging.
+A provisional six-count zero offset, measured on OUT1 with the output active
+and its load disconnected, is subtracted before conversion. The original
+NCV84045 gain remains unchanged pending a calibrated higher-current test.
 
 Default protection per output is 5.0 A continuous, 100 ms continuous trip
 delay, 8.0 A inrush, and 500 ms inrush allowance. Accepted ranges are

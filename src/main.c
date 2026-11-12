@@ -84,8 +84,9 @@ int main(void)
 				CO->NMT->operatingState == CO_NMT_OPERATIONAL;
 
 			if (adc_ready && timestamp >= next_adc_ms) {
-				if (pdu_adc_sample(raw) == 0) {
-					uint16_t active = pdu_control_active_outputs();
+				uint16_t active = pdu_control_active_outputs();
+
+				if (pdu_adc_sample(raw, active) == 0) {
 
 					currents_valid = true;
 					for (size_t i = 0; i < PDU_OUTPUT_COUNT; ++i) {

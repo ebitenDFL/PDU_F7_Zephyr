@@ -8,7 +8,7 @@
 #include "pdu_telemetry.h"
 
 int pdu_adc_init(void);
-int pdu_adc_sample(uint16_t raw[PDU_OUTPUT_COUNT]);
+int pdu_adc_sample(uint16_t raw[PDU_OUTPUT_COUNT], uint16_t active_outputs);
 uint32_t pdu_adc_raw_to_ma(uint16_t raw);
 
 #endif /* PDU_ADC_H_ */

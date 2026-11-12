@@ -24,6 +24,9 @@
 #define NCV84045_SENSE_RATIO_TYP  1230U
 #define CURRENT_SENSE_RESISTOR_OHM 301U
 #define AD7490_FULL_SCALE_COUNTS  4095U
+#define AD7490_ZERO_OFFSET_COUNTS    6U
+#define CURRENT_DUMMY_READS          3U
+#define CURRENT_FILTER_SAMPLES      16U
 
 static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(spi1));
 static const struct gpio_dt_spec adc_cs =
@@ -98,6 +101,39 @@ static int ad7490_read_channel(uint8_t channel, uint16_t *raw)
 	return 0;
 }
 
+static int ad7490_read_current_filtered(uint8_t channel, uint16_t *raw_average)
+{
+	uint32_t sum = 0U;
+	uint16_t raw = 0U;
+	uint16_t minimum = UINT16_MAX;
+	uint16_t maximum = 0U;
+	int ret;
+
+	/* Match the proven VI_PDU3 low-current acquisition sequence. */
+	for (uint8_t i = 0U; i < CURRENT_DUMMY_READS; ++i) {
+		ret = ad7490_read_channel(channel, &raw);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	for (uint8_t i = 0U; i < CURRENT_FILTER_SAMPLES; ++i) {
+		ret = ad7490_read_channel(channel, &raw);
+		if (ret != 0) {
+			return ret;
+		}
+		sum += raw;
+		minimum = MIN(minimum, raw);
+		maximum = MAX(maximum, raw);
+	}
+
+	sum -= minimum;
+	sum -= maximum;
+	*raw_average = (uint16_t)((sum + ((CURRENT_FILTER_SAMPLES - 2U) / 2U)) /
+				 (CURRENT_FILTER_SAMPLES - 2U));
+	return 0;
+}
+
 int pdu_adc_init(void)
 {
 	uint16_t ignored;
@@ -134,10 +170,16 @@ int pdu_adc_init(void)
 	return 0;
 }
 
-int pdu_adc_sample(uint16_t raw[PDU_OUTPUT_COUNT])
+int pdu_adc_sample(uint16_t raw[PDU_OUTPUT_COUNT], uint16_t active_outputs)
 {
 	for (uint8_t channel = 0U; channel < PDU_OUTPUT_COUNT; ++channel) {
-		int ret = ad7490_read_channel(channel, &raw[channel]);
+		int ret;
+
+		if ((active_outputs & BIT(channel)) != 0U) {
+			ret = ad7490_read_current_filtered(channel, &raw[channel]);
+		} else {
+			ret = ad7490_read_channel(channel, &raw[channel]);
+		}
 
 		if (ret != 0) {
 			return ret;
@@ -149,7 +191,9 @@ int pdu_adc_sample(uint16_t raw[PDU_OUTPUT_COUNT])
 
 uint32_t pdu_adc_raw_to_ma(uint16_t raw)
 {
-	uint64_t numerator = (uint64_t)raw * AD7490_REFERENCE_MV *
+	uint16_t corrected_raw = raw > AD7490_ZERO_OFFSET_COUNTS ?
+				 raw - AD7490_ZERO_OFFSET_COUNTS : 0U;
+	uint64_t numerator = (uint64_t)corrected_raw * AD7490_REFERENCE_MV *
 			     NCV84045_SENSE_RATIO_TYP;
 	uint32_t denominator = AD7490_FULL_SCALE_COUNTS *
 			       CURRENT_SENSE_RESISTOR_OHM;

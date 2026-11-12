@@ -251,3 +251,26 @@ requested output bitmaps were both zero. MCUboot activation succeeded and SDO
 reads confirmed `VIIALA_PDU1_V0`, `A001`, output bitmap zero, request bitmap
 zero, raw inactive-channel readings 4095, and published inactive currents
 0 mA. Current scaling under a known powered load remains to be validated.
+
+## Low-current filtering characterization
+
+Performed on 2026-11-12 using OUT1 and a series current measurement of 39 mA.
+With OUT1 active and the load disconnected, 300 raw samples had a 6.23-count
+mean. With the 39 mA load connected, the matching mean was 22.34 counts. The
+firmware now applies the VI_PDU3 acquisition method (three settling reads,
+sixteen samples, discard minimum/maximum, average) and a provisional six-count
+zero offset while retaining the original high-current gain.
+
+After installation, the filtered 39 mA test produced an average raw value of
+4.58 counts and an average reported current of 2.38 mA. This demonstrates that
+39 mA is below the practical accurate range of the NCV84045 current-sense path;
+the earlier mean was dominated by intermittent noise. The gain must not be
+forced to this low-current point. Calibration remains pending with known fused
+loads in the 0.5–5 A range.
+
+- Application flash: 58,144 / 65,152 bytes (89.24%)
+- Signed update size: 58,480 bytes each
+- A signed-bin SHA-256:
+  `8fc28a75b3508c335df48a137c5e1fb8828c47963a046b7788883af7ce6ea681`
+- B signed-bin SHA-256:
+  `c6789a5451b230c0fb170b07d5d28ee2517642a030cb738b5c8d486a4c863af6`

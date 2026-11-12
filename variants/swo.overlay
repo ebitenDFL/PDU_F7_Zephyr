@@ -1,0 +1,11 @@
+/* Temporary debug routing only; PB3 is the board programming-header SWO pin.
+ * STM32F7's common devicetree does not declare its architectural ITM block,
+ * so define it under the Cortex-M7 CPU for Zephyr's SWO logging backend.
+ */
+&cpu0 {
+	itm: itm@e0000000 {
+		compatible = "arm,armv7m-itm";
+		reg = <0xe0000000 0x1000>;
+		status = "okay";
+	};
+};

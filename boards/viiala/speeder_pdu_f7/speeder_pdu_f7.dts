@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2026
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Hardware source: SPEEDER_PDU_v2.pdf, generated 2026-11-11.
+ * MCU: STM32F722RCT6 (LQFP64, 256 KiB flash)
+ * HSE: 16 MHz crystal
+ */
+
+/dts-v1/;
+
+#include <st/f7/stm32f722Xe.dtsi>
+#include <st/f7/stm32f722r(c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/stm32f7_clock.h>
+
+/ {
+	model = "Viiala Speeder legacy PDU STM32F722RC";
+	compatible = "viiala,speeder-pdu-f7";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,canbus = &can1;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	/*
+	 * These nodes are consumed only by the safe bring-up application.
+	 * The NCV84045 inputs have hardware pull-downs, so reset/high-Z is OFF.
+	 */
+	safe_controls: safe_controls {
+		compatible = "gpio-leds";
+
+		out1  { gpios = <&gpioc 0  GPIO_ACTIVE_HIGH>; label = "OUT1 enable";  };
+		out2  { gpios = <&gpioc 1  GPIO_ACTIVE_HIGH>; label = "OUT2 enable";  };
+		out3  { gpios = <&gpioc 2  GPIO_ACTIVE_HIGH>; label = "OUT3 enable";  };
+		out4  { gpios = <&gpioc 3  GPIO_ACTIVE_HIGH>; label = "OUT4 enable";  };
+		out5  { gpios = <&gpioc 4  GPIO_ACTIVE_HIGH>; label = "OUT5 enable";  };
+		out6  { gpios = <&gpioc 6  GPIO_ACTIVE_HIGH>; label = "OUT6 enable";  };
+		out7  { gpios = <&gpioc 7  GPIO_ACTIVE_HIGH>; label = "OUT7 enable";  };
+		out8  { gpios = <&gpioc 8  GPIO_ACTIVE_HIGH>; label = "OUT8 enable";  };
+		out9  { gpios = <&gpioc 9  GPIO_ACTIVE_HIGH>; label = "OUT9 enable";  };
+		out10 { gpios = <&gpioc 10 GPIO_ACTIVE_HIGH>; label = "OUT10 enable"; };
+		out11 { gpios = <&gpioc 11 GPIO_ACTIVE_HIGH>; label = "OUT11 enable"; };
+		out12 { gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>; label = "OUT12 enable"; };
+		out13 { gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>; label = "OUT13 enable"; };
+		out14 { gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>; label = "OUT14 enable"; };
+		out15 { gpios = <&gpioc 15 GPIO_ACTIVE_HIGH>; label = "OUT15 enable"; };
+
+		cs_en {
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+			label = "NCV84045 current-sense enable";
+		};
+
+		adc_cs {
+			gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+			label = "AD7490 chip select";
+		};
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>;
+	status = "okay";
+};
+
+/* 16 MHz / 8 * 216 / 2 = 216 MHz. */
+&pll {
+	div-m = <8>;
+	mul-n = <216>;
+	div-p = <2>;
+	div-q = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(216)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+/*
+ * Upstream stm32f722Xe.dtsi describes the 512 KiB E variant. The fitted
+ * STM32F722RCT6 is the 256 KiB C variant, so constrain both values here.
+ */
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(256)>;
+	ranges = <0 0x08000000 DT_SIZE_K(256)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Sectors 0-3: four 16 KiB sectors. */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/* Sector 4: one 64 KiB sector. */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(64)>;
+		};
+
+		/* Sector 5: one 128 KiB sector. */
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_pb8 &can1_tx_pb9>;
+	pinctrl-names = "default";
+	bitrate = <500000>;
+	status = "okay";
+};
+
+&spi1 {
+	status = "disabled";
+};
+
+&usart2 {
+	status = "disabled";
+};

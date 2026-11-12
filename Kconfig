@@ -1,0 +1,31 @@
+menu "SPEEDER PDU application"
+
+config CANOPEN_NODE_ID
+	int "CANopen node ID"
+	range 1 127
+	default 10
+
+config PDU_SWO_DEBUG
+	bool "Enable the temporary SWO diagnostic stream"
+	default n
+	help
+	  Emit a boot message and periodic safe-state heartbeat over ITM/SWO.
+	  This does not enable any power output or output-control object.
+
+choice PDU_IMAGE_VARIANT
+	prompt "Firmware image identity"
+	default PDU_IMAGE_VARIANT_A
+	help
+	  Select the identity returned by CANopen SDO 0x100A:00.
+
+config PDU_IMAGE_VARIANT_A
+	bool "Image A (A001)"
+
+config PDU_IMAGE_VARIANT_B
+	bool "Image B (B001)"
+
+endchoice
+
+endmenu
+
+source "Kconfig.zephyr"

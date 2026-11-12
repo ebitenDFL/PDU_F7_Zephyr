@@ -1,0 +1,6 @@
+/* MCUboot occupies sectors 0..3 at the beginning of internal flash. */
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};

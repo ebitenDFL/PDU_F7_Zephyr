@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SPEEDER PDU Workbench
+Comment=CANopen diagnostics and signed firmware updates for the SPEEDER PDU
+Exec=/home/dfl/Projects/PDU_F7_Zephyr/gui/run_pdu_gui.sh
+Icon=utilities-system-monitor
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true

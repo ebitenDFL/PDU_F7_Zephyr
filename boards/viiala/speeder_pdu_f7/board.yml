@@ -1,0 +1,6 @@
+board:
+  name: speeder_pdu_f7
+  full_name: Speeder Legacy PDU STM32F722RC
+  vendor: viiala
+  socs:
+    - name: stm32f722xx

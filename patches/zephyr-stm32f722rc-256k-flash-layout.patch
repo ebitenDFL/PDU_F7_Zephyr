@@ -1,0 +1,15 @@
+diff --git a/drivers/flash/flash_stm32f7x.c b/drivers/flash/flash_stm32f7x.c
+--- a/drivers/flash/flash_stm32f7x.c
++++ b/drivers/flash/flash_stm32f7x.c
+@@ -236,3 +236,10 @@
+ #elif FLASH_SECTOR_TOTAL == 8
+-#if CONFIG_FLASH_SIZE == 512
++#if CONFIG_FLASH_SIZE == 256
++static const struct flash_pages_layout stm32f7_flash_layout[] = {
++	/* RM0431, table 3: first 256 KiB fitted on STM32F722xC. */
++	{.pages_count = 4, .pages_size = KB(16)},
++	{.pages_count = 1, .pages_size = KB(64)},
++	{.pages_count = 1, .pages_size = KB(128)},
++};
++#elif CONFIG_FLASH_SIZE == 512
+ static const struct flash_pages_layout stm32f7_flash_layout[] = {

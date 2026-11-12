@@ -1,0 +1,7 @@
+/build/
+/build_*/
+/.worktrees/
+/.west/
+compile_commands.json
+__pycache__/
+*.py[cod]

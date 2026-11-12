@@ -64,6 +64,11 @@ void pdu_control_all_off(void)
 	pdu_telemetry_set_output_states(0U, OD_outputRequest & PDU_OUTPUT_MASK);
 }
 
+uint16_t pdu_control_active_outputs(void)
+{
+	return actual_outputs;
+}
+
 void pdu_control_tick(int64_t now_ms, bool canopen_operational,
 		      bool current_measurement_valid)
 {
@@ -101,13 +106,15 @@ void pdu_control_tick(int64_t now_ms, bool canopen_operational,
 		uint16_t bit = BIT(i);
 		bool desired = canopen_operational && current_measurement_valid &&
 			       ((requested & bit) != 0U) && ((faults & bit) == 0U);
+		bool just_enabled = desired && (actual_outputs & bit) == 0U;
 
-		if (desired && (actual_outputs & bit) == 0U) {
+		if (just_enabled) {
 			enabled_at_ms[i] = now_ms;
 			over_limit_at_ms[i] = 0;
 		}
 
-		if (desired) {
+		/* The first current value still belongs to the OFF-state diagnostic. */
+		if (desired && !just_enabled) {
 			uint32_t age_ms = (uint32_t)(now_ms - enabled_at_ms[i]);
 			bool inrush = age_ms < OD_inrushTime_ms[i];
 			uint16_t threshold = inrush ? OD_inrushLimit_mA[i] :

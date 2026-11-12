@@ -96,6 +96,8 @@ The initial conversion uses the NCV84045 typical current-sense ratio of 1230
 and the fitted 301 ohm sense resistor: approximately 2.49 mA per ADC count.
 This is a nominal engineering conversion, not a production calibration. Raw
 counts at `0x3001` are retained so each hardware revision can be calibrated.
+Inactive outputs report zero current even when the raw ADC channel carries an
+NCV84045 OFF-state diagnostic level. The raw value remains visible at `0x3001`.
 
 Default protection per output is 5.0 A continuous, 100 ms continuous trip
 delay, 8.0 A inrush, and 500 ms inrush allowance. Accepted ranges are

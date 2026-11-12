@@ -85,10 +85,16 @@ int main(void)
 
 			if (adc_ready && timestamp >= next_adc_ms) {
 				if (pdu_adc_sample(raw) == 0) {
+					uint16_t active = pdu_control_active_outputs();
+
 					currents_valid = true;
 					for (size_t i = 0; i < PDU_OUTPUT_COUNT; ++i) {
+						uint32_t current_ma =
+							(active & BIT(i)) != 0U ?
+							pdu_adc_raw_to_ma(raw[i]) : 0U;
+
 						(void)pdu_telemetry_set_current(
-							i, raw[i], pdu_adc_raw_to_ma(raw[i]));
+							i, raw[i], current_ma);
 					}
 				} else {
 					currents_valid = false;

@@ -226,3 +226,28 @@ load. Before normal use, bench-test raw ADC counts, current scaling, each output
 mapping, continuous-limit timing, inrush timing and latched-fault recovery.
 The images use MCUboot's public development key and are for controlled bench
 use only.
+
+## AD7490 mode correction and CAN update
+
+Performed on 2026-11-12 after comparing the Zephyr driver with the known-good
+VI_PDU3 CubeIDE implementation.
+
+- Changed SPI from mode 2 to the hardware-verified mode 0 (CPOL=0, CPHA=0).
+- Replaced two `0xFFFF` startup transfers with one valid channel-0 control
+  transfer.
+- Inactive outputs now publish 0 mA while retaining the NCV84045 OFF-state
+  diagnostic level in the raw ADC object.
+- A newly requested output skips the stale OFF-state ADC sample before current
+  protection begins.
+- Both A and B compiled at 58,000 / 65,152 bytes application flash (89.02%).
+- Signed A/B update size: 58,336 bytes each.
+- A signed-bin SHA-256:
+  `3c6f6928749df4b9247557f1904cda88536d51cdf5fb024368404e720a013a9d`
+- B signed-bin SHA-256:
+  `8e6054107f5fe0c5c78f665f1c5651b4de3828b38014b13ecc853bc56e07b756`
+
+The corrected A image was installed over CAN after confirming active and
+requested output bitmaps were both zero. MCUboot activation succeeded and SDO
+reads confirmed `VIIALA_PDU1_V0`, `A001`, output bitmap zero, request bitmap
+zero, raw inactive-channel readings 4095, and published inactive currents
+0 mA. Current scaling under a known powered load remains to be validated.

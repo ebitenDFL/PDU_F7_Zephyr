@@ -34,7 +34,7 @@ static const struct gpio_dt_spec current_sense_enable =
 static const struct spi_config spi_cfg = {
 	.frequency = AD7490_SPI_FREQUENCY_HZ,
 	.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
-		     SPI_TRANSFER_MSB | SPI_MODE_CPOL,
+		     SPI_TRANSFER_MSB,
 	.slave = 0,
 };
 
@@ -118,11 +118,8 @@ int pdu_adc_init(void)
 		return ret;
 	}
 
-	/* Datasheet power-up sequence: two dummy transfers, then normal mode. */
-	ret = ad7490_transfer(0xFFFFU, &ignored);
-	if (ret == 0) {
-		ret = ad7490_transfer(0xFFFFU, &ignored);
-	}
+	/* Prime with a valid channel-0 control word, as verified on VI_PDU3. */
+	ret = ad7490_transfer(ad7490_control_word(0U), &ignored);
 	if (ret != 0) {
 		return ret;
 	}

@@ -8,6 +8,7 @@
 
 int pdu_control_init(void);
 void pdu_control_all_off(void);
+uint16_t pdu_control_active_outputs(void);
 void pdu_control_tick(int64_t now_ms, bool canopen_operational,
 		      bool current_measurement_valid);
 

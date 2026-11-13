@@ -274,3 +274,35 @@ loads in the 0.5–5 A range.
   `8fc28a75b3508c335df48a137c5e1fb8828c47963a046b7788883af7ce6ea681`
 - B signed-bin SHA-256:
   `c6789a5451b230c0fb170b07d5d28ee2517642a030cb738b5c8d486a4c863af6`
+
+# Zephyr 4.5.0 migration and CAN runtime verification
+
+Performed on 2026-11-13 using a new workspace at
+`/home/dfl/zephyrproject-4.5.0`. The historical Zephyr checkout and its local
+changes were not modified.
+
+- Zephyr: `v4.5.0` (`41d10b59730406bbab4ca9f1fbbe9e96aafb4966`)
+- SDK/toolchain: Zephyr SDK 1.0.1, GCC 14.3.0
+- Board target: `speeder_pdu_f7/stm32f722xx`
+- Required downstream change: the existing STM32F722RC 256 KiB flash-sector
+  layout patch, applied only to the new 4.5 workspace
+- Application flash: 60,804 / 65,152 bytes (93.33%)
+- Application RAM: 12,544 / 196,608 bytes (6.38%)
+- Signed update size: 61,140 bytes each
+- A001 signed-bin SHA-256:
+  `f1175746a0ef250087bbff5aa03c19a3eba767b2c3df229d86fa439df1d2933e`
+- B001 signed-bin SHA-256:
+  `1fab89ced28a11d775b0b1f322f8cc4dfddd67a1f9b6a0eac95c075ea869b0ed`
+
+Both signed images were transferred over the PEAK PCAN-USB interface at
+500 kbit/s. The running B001 image was updated to the new A001 image, then to
+the independently built B001 image. Both transfers completed, MCUboot accepted
+and activated both images, and CANopen `0x100A:00` reported the expected
+identity after each reboot. Post-update reads confirmed active-output, output-
+request and fault bitmaps were all `0x0000`.
+
+The Linux workbench was also updated with dedicated ON/OFF/Reset controls on
+every output row. Reset forces the selected request OFF before pulsing the
+fault-clear object. The launcher now checks and starts `can0` at 500 kbit/s
+with 100 ms automatic bus-off recovery when necessary. Python syntax, shell
+syntax, protocol helper tests and live GUI startup all passed.

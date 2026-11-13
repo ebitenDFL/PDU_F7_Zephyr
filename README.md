@@ -33,22 +33,42 @@ not be flashed. A separate RSA-signed bench build uses MCUboot's public
 development key and successfully updated `A001` to `B001` over CAN. See
 `docs/CANOPEN.md` for the safety boundary.
 
-## Build in the existing Linux Zephyr workspace
+## Build with pinned Zephyr 4.5.0
+
+The laptop keeps Zephyr 4.5.0 in `/home/dfl/zephyrproject-4.5.0`, separate
+from the historical workspace. Apply the project-owned STM32F722RC 256 KiB
+sector-layout patch once after creating or refreshing that workspace:
+
+```sh
+cd /home/dfl/zephyrproject-4.5.0/zephyr
+git apply --check \
+  /home/dfl/Projects/PDU_F7_Zephyr/patches/zephyr-stm32f722rc-256k-flash-layout.patch
+git apply \
+  /home/dfl/Projects/PDU_F7_Zephyr/patches/zephyr-stm32f722rc-256k-flash-layout.patch
+```
+
+Build both signed CAN-update variants with:
 
 ```sh
 source /home/dfl/zephyrproject/.venv/bin/activate
-export ZEPHYR_BASE=/home/dfl/zephyrproject/zephyr
+export ZEPHYR_BASE=/home/dfl/zephyrproject-4.5.0/zephyr
 export ZEPHYR_SDK_INSTALL_DIR=/home/dfl/zephyr-sdk-1.0.1
-cd /home/dfl/zephyrproject
-west build -p always -b speeder_pdu_f7/stm32f722xx \
+cd /home/dfl/zephyrproject-4.5.0
+west build --sysbuild -p always -b speeder_pdu_f7/stm32f722xx \
   /home/dfl/Projects/PDU_F7_Zephyr \
-  -d /home/dfl/Projects/PDU_F7_Zephyr/build_canopen_a -- \
-  -DEXTRA_CONF_FILE=variants/a.conf
+  -d /home/dfl/Projects/PDU_F7_Zephyr/build_z45_update_a -- \
+  -DBOARD_ROOT=/home/dfl/Projects/PDU_F7_Zephyr \
+  -DDTS_ROOT=/home/dfl/Projects/PDU_F7_Zephyr \
+  -DEXTRA_CONF_FILE=variants/update_a.conf \
+  -DZEPHYR_EXTRA_MODULES=/home/dfl/zephyrproject/modules/CANopenNodeZephyr
 
-west build -p always -b speeder_pdu_f7/stm32f722xx \
+west build --sysbuild -p always -b speeder_pdu_f7/stm32f722xx \
   /home/dfl/Projects/PDU_F7_Zephyr \
-  -d /home/dfl/Projects/PDU_F7_Zephyr/build_canopen_b -- \
-  -DEXTRA_CONF_FILE=variants/b.conf
+  -d /home/dfl/Projects/PDU_F7_Zephyr/build_z45_update_b -- \
+  -DBOARD_ROOT=/home/dfl/Projects/PDU_F7_Zephyr \
+  -DDTS_ROOT=/home/dfl/Projects/PDU_F7_Zephyr \
+  -DEXTRA_CONF_FILE=variants/update_b.conf \
+  -DZEPHYR_EXTRA_MODULES=/home/dfl/zephyrproject/modules/CANopenNodeZephyr
 ```
 
 These commands compile only. They do not invoke the connected ST-LINK. Do not
@@ -80,9 +100,10 @@ After a successful build, verify:
 
 ```sh
 grep -E 'CONFIG_(CANOPEN_NODE_ID|CAN_DEFAULT_BITRATE|PDU_IMAGE_VARIANT)' \
-  build_canopen_a/zephyr/.config build_canopen_b/zephyr/.config
-strings build_canopen_a/zephyr/zephyr.bin | grep 'VIIALA_PDU1_V0'
-strings build_canopen_b/zephyr/zephyr.bin | grep 'VIIALA_PDU1_V0'
+  build_z45_update_a/PDU_F7_Zephyr/zephyr/.config \
+  build_z45_update_b/PDU_F7_Zephyr/zephyr/.config
+strings build_z45_update_a/PDU_F7_Zephyr/zephyr/zephyr.signed.bin | grep 'VIIALA_PDU1_V0'
+strings build_z45_update_b/PDU_F7_Zephyr/zephyr/zephyr.signed.bin | grep 'VIIALA_PDU1_V0'
 ```
 
 Expected: both builds succeed, CAN defaults to 500 kbit/s and node ID 10, the
@@ -95,9 +116,9 @@ The first verified build is recorded in `hardware/BUILD_VERIFICATION.md`.
 The `gui/` directory contains the VIIALA PDU CANopen Workbench for the PEAK
 PCAN-USB adapter on Linux. It shows live identity, heartbeat, diagnostics and
 all fifteen telemetry channels, includes an SDO inspector and CAN traffic view,
-and supports guarded output requests, current protection configuration,
+and supports per-row ON/OFF/Reset output controls, current protection configuration,
 confirmed raw SDO writes, volatile communication changes and signed MCUboot
-updates.
+updates. Its launcher automatically prepares `can0` at 500 kbit/s when needed.
 
 Launch it with:
 

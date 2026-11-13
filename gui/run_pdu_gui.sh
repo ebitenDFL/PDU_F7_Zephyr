@@ -2,6 +2,8 @@
 set -euo pipefail
 
 project_dir=/home/dfl/Projects/PDU_F7_Zephyr
+can_interface="${PDU_CAN_IFACE:-can0}"
+can_bitrate="${PDU_CAN_BITRATE:-500000}"
 
 # An SSH shell does not inherit the graphical session. Reuse the active
 # Xwayland environment so the window opens on the Linux laptop's desktop.
@@ -18,6 +20,26 @@ if [[ -z "${DISPLAY:-}" ]]; then
 			export "$variable=$value"
 		fi
 	done
+fi
+
+# Leave an already-correct interface untouched. If configuration is needed,
+# use an existing passwordless sudo rule or request elevation graphically.
+set +e
+"$project_dir/gui/setup_can.sh" "$can_interface" "$can_bitrate"
+can_status=$?
+set -e
+if (( can_status == 77 )); then
+	if ! sudo -n "$project_dir/gui/setup_can.sh" "$can_interface" "$can_bitrate" 2>/dev/null; then
+		if command -v pkexec >/dev/null 2>&1; then
+			pkexec "$project_dir/gui/setup_can.sh" "$can_interface" "$can_bitrate"
+		else
+			echo "Administrator permission is required to start $can_interface." >&2
+			exit 1
+		fi
+	fi
+elif (( can_status != 0 )); then
+	echo "Unable to prepare $can_interface for the PDU workbench." >&2
+	exit "$can_status"
 fi
 
 source /home/dfl/zephyrproject/.venv/bin/activate

@@ -4,8 +4,10 @@ CAN1 runs on PB8/PB9 at 500 kbit/s with default node ID 10. The fixed device
 name at `0x1008:00` is `VIIALA_PDU1_V0`. All outputs initialize inactive.
 
 Four TPDOs broadcast all fifteen measured output-current channels in mA plus
-the active-output bitmap at 10 Hz. Current acquisition uses the AD7490 on SPI1;
-the protection loop samples every 5 ms. See `docs/OBJECT_DICTIONARY.md` for
+the active-output bitmap at 10 Hz. Manufacturer TPDO5 (`0x680 + node ID`)
+broadcasts PDU input voltage, MCU die temperature, MCU VDDA and warning flags
+every five seconds. Current acquisition uses the AD7490 on SPI1; the protection
+loop samples every 5 ms. See `docs/OBJECT_DICTIONARY.md` for
 limits, SDO indexes, units and validity bits.
 
 ## Image identity
@@ -62,10 +64,11 @@ contains `patches/zephyr-stm32f722rc-256k-flash-layout.patch` and a guarded buil
 script which applies it only while compiling and reverses it on exit. The shared
 Zephyr checkout remains unchanged after the build.
 
-The update path was bench-tested on 2026-11-11 using MCUboot RSA verification
-with MCUboot's published development key. It successfully transferred a signed
-53,384-byte B image over CANopen, rebooted through MCUboot, changed SDO
-`0x100A:00` from `A001` to `B001`, and confirmed the new image. The development
+The update path was bench-tested again on 2026-11-13 using MCUboot RSA
+verification with MCUboot's published development key. It successfully
+transferred the signed 62,348-byte sensor-enabled A and B images over CANopen,
+rebooted through MCUboot, changed SDO `0x100A:00` between `A001` and `B001`,
+and confirmed the new image and telemetry. The development
 key is public and is **not approved for production or field deployment**.
 Production images still require a protected project signing key, interrupted
 transfer and power-loss testing, and a defined ST-LINK recovery procedure.

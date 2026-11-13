@@ -10,7 +10,8 @@ without a new SDO request.
 ## Default TPDO broadcast
 
 The four standard TPDOs are asynchronous (`transmission type 254`) with a
-100 ms event timer and a 100 ms inhibit time. CANopen multibyte values are
+100 ms event timer and a 100 ms inhibit time. A fifth manufacturer TPDO carries
+slow electrical/thermal telemetry every five seconds. CANopen multibyte values are
 little-endian. PDO transmission starts only after the node enters the CANopen
 Operational state.
 
@@ -22,11 +23,13 @@ For the default node ID 10:
 | TPDO2 | `0x28A` | Current 5, 6, 7, 8 as four `uint16` mA values |
 | TPDO3 | `0x38A` | Current 9, 10, 11, 12 as four `uint16` mA values |
 | TPDO4 | `0x48A` | Current 13, 14, 15 as three `uint16` mA values, then active-output bitmap |
+| TPDO5 | `0x68A` | Supply mV (`uint16`), MCU die temperature in 0.1 degC (`int16`), MCU VDDA mV (`uint16`), warning flags (`uint16`) |
 
 The output bitmap uses bits 0..14 for outputs 1..15. Bit 15 is reserved and
 always zero.
 
-The broadcast consumes 40 classic CAN data frames per second. It is about
+The fast broadcast consumes 40 classic CAN data frames per second; TPDO5 adds
+one frame every five seconds. It is about
 10 kbit/s including conservative CAN frame overhead, or roughly 2% of a
 500 kbit/s bus before bit stuffing.
 
@@ -50,6 +53,7 @@ The broadcast consumes 40 classic CAN data frames per second. It is about
 | `0x200D` | `uint16` | CAN bus-off counter | validity bit clear |
 | `0x200E` | `uint16` | Warning flags | validity bit clear |
 | `0x200F` | `uint32` | Telemetry-validity bitmap | - |
+| `0x2010` | `uint16` | Factory-calibrated MCU analog supply (VDDA) in mV | `0xFFFF` |
 | `0x3000:01..0F` | `uint16[15]` | Output currents in mA | `0xFFFF` |
 | `0x3001:01..0F` | `uint16[15]` | AD7490 raw counts | `0xFFFF` |
 | `0x3002:01..0F` | `uint16[15]` | Peak output currents in mA | `0xFFFF` |
@@ -79,7 +83,8 @@ available.
 | 19 | MCU temperature valid |
 | 20 | Fault masks valid |
 | 21 | Reset, brownout and CAN diagnostic counters valid |
-| 22..31 | Reserved |
+| 22 | MCU analog supply (VDDA) valid |
+| 23..31 | Reserved |
 
 The firmware samples all fifteen AD7490 current channels every 5 ms. Until a
 valid scan completes the current values remain `0xFFFF`, output requests cannot
@@ -87,10 +92,18 @@ energize hardware, and the total-current value remains `0xFFFFFFFF`.
 
 ## Hardware measurement boundary
 
-The updated schematic connects fifteen NCV84045 current-sense outputs to the
-AD7490. The ADC is 12-bit with a 2.5 V reference. Its sixteenth input is not a
-battery-voltage channel. `0x2007` therefore stays unavailable until a verified
-voltage-measurement source is added.
+The updated hardware uses AD7490 channel IN15 for input voltage through a
+100 kohm / 22 kohm divider. The firmware averages sixteen samples, rejects the
+minimum and maximum, and publishes the result every five seconds. With the
+2.5 V ADC reference this divider reaches full scale at approximately 13.86 V;
+voltages above that cannot be distinguished and require a divider change for
+normal 14.4 V charging-system operation.
+
+The STM32F722 factory calibration words provide the MCU die temperature and
+the actual VDDA value. Die temperature is junction temperature, not ambient or
+PCB temperature; `0x2008` remains unavailable until a board sensor is fitted.
+The internal VBAT ADC path is not enabled because it shares ADC channel 18 with
+the temperature sensor on this MCU.
 
 The initial conversion uses the NCV84045 typical current-sense ratio of 1230
 and the fitted 301 ohm sense resistor: approximately 2.49 mA per ADC count.

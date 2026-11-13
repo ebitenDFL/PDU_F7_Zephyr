@@ -16,6 +16,7 @@ target_sources(app PRIVATE
 	src/main.c
 	src/pdu_adc.c
 	src/pdu_control.c
+	src/pdu_mcu_sensors.c
 	src/pdu_telemetry.c
 	objdict/CO_OD.c
 )

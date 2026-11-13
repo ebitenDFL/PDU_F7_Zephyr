@@ -15,6 +15,7 @@
 #include "CO_OD.h"
 #include "pdu_adc.h"
 #include "pdu_control.h"
+#include "pdu_mcu_sensors.h"
 #include "pdu_telemetry.h"
 
 LOG_MODULE_REGISTER(viiala_pdu, LOG_LEVEL_INF);
@@ -23,6 +24,7 @@ LOG_MODULE_REGISTER(viiala_pdu, LOG_LEVEL_INF);
 #define CAN_BITRATE_KBPS_DEFAULT \
 	(DT_PROP(DT_CHOSEN(zephyr_canbus), bitrate) / 1000)
 #define ADC_SAMPLE_PERIOD_MS 5U
+#define SLOW_TELEMETRY_PERIOD_MS 5000U
 #define COMM_APPLY_MAGIC 0xA5U
 #define COMM_APPLY_REJECTED 0xFFU
 
@@ -39,9 +41,11 @@ int main(void)
 	uint8_t node_id = CONFIG_CANOPEN_NODE_ID;
 	uint16_t bitrate_kbps = CAN_BITRATE_KBPS_DEFAULT;
 	bool adc_ready;
+	bool mcu_sensors_ready;
 	bool currents_valid = false;
 	uint16_t raw[PDU_OUTPUT_COUNT];
 	int64_t next_adc_ms = 0;
+	int64_t next_slow_telemetry_ms = 0;
 	int64_t next_swo_heartbeat_ms = 0;
 
 	if (pdu_control_init() != 0 || !device_is_ready(can.dev)) {
@@ -51,8 +55,12 @@ int main(void)
 
 	pdu_telemetry_init_safe();
 	adc_ready = pdu_adc_init() == 0;
+	mcu_sensors_ready = pdu_mcu_sensors_init() == 0;
 	if (!adc_ready) {
 		LOG_ERR("AD7490 initialization failed; outputs locked OFF");
+	}
+	if (!mcu_sensors_ready) {
+		LOG_WRN("MCU temperature/VREF sensors are unavailable");
 	}
 
 	OD_pendingNodeID = node_id;
@@ -63,6 +71,9 @@ int main(void)
 	do {
 		reset = CO_RESET_NOT;
 		pdu_control_all_off();
+		/* TPDO5 is manufacturer-specific; keep its COB-ID node-relative. */
+		OD_TPDOCommunicationParameter[4].COB_IDUsedByTPDO =
+			0x680U + node_id;
 
 		if (CO_init(&can, node_id, bitrate_kbps) != CO_ERROR_NO) {
 			LOG_ERR("CANopen initialization failed");
@@ -77,6 +88,7 @@ int main(void)
 		}
 
 		next_adc_ms = k_uptime_get();
+		next_slow_telemetry_ms = k_uptime_get();
 		while (reset == CO_RESET_NOT) {
 			uint16_t timeout_ms = 1U;
 			int64_t timestamp = k_uptime_get();
@@ -102,6 +114,35 @@ int main(void)
 					pdu_telemetry_invalidate_currents();
 				}
 				next_adc_ms = timestamp + ADC_SAMPLE_PERIOD_MS;
+			}
+
+			if (timestamp >= next_slow_telemetry_ms) {
+				uint16_t input_raw;
+				uint16_t input_mv;
+				int16_t die_temp_dc;
+				uint16_t vdda_mv;
+
+				if (adc_ready && pdu_adc_read_input_voltage(
+							&input_raw, &input_mv) == 0) {
+					pdu_telemetry_set_supply_voltage(input_mv, true);
+				} else {
+					pdu_telemetry_set_supply_voltage(0U, false);
+				}
+
+				if (mcu_sensors_ready && pdu_mcu_sensors_sample(
+							&die_temp_dc, &vdda_mv) == 0) {
+					pdu_telemetry_set_mcu_temperature(die_temp_dc, true);
+					pdu_telemetry_set_mcu_supply(vdda_mv, true);
+				} else {
+					pdu_telemetry_set_mcu_temperature(0, false);
+					pdu_telemetry_set_mcu_supply(0U, false);
+				}
+				if (operational) {
+					(void)CO_TPDOsend(CO->TPDO[4]);
+				}
+
+				next_slow_telemetry_ms = timestamp +
+							 SLOW_TELEMETRY_PERIOD_MS;
 			}
 
 			pdu_control_tick(timestamp, operational, currents_valid);

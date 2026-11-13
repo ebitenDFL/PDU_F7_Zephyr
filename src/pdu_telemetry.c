@@ -47,6 +47,7 @@ void pdu_telemetry_init_safe(void)
 	OD_supplyVoltage_mV = PDU_TELEMETRY_UNKNOWN_U16;
 	OD_boardTemperature_dC = PDU_TELEMETRY_UNKNOWN_I16;
 	OD_mcuTemperature_dC = PDU_TELEMETRY_UNKNOWN_I16;
+	OD_mcuSupplyVoltage_mV = PDU_TELEMETRY_UNKNOWN_U16;
 	OD_uptime_s = 0U;
 	OD_resetReason = PDU_TELEMETRY_UNKNOWN_U16;
 	OD_brownoutCount = 0U;
@@ -61,6 +62,30 @@ void pdu_telemetry_init_safe(void)
 		OD_overCurrentTripCount[i] = 0U;
 	}
 
+	CO_UNLOCK_OD();
+}
+
+void pdu_telemetry_set_supply_voltage(uint16_t millivolts, bool valid)
+{
+	CO_LOCK_OD();
+	OD_supplyVoltage_mV = valid ? millivolts : PDU_TELEMETRY_UNKNOWN_U16;
+	WRITE_BIT(OD_telemetryValidity, 17, valid);
+	CO_UNLOCK_OD();
+}
+
+void pdu_telemetry_set_mcu_temperature(int16_t decicelsius, bool valid)
+{
+	CO_LOCK_OD();
+	OD_mcuTemperature_dC = valid ? decicelsius : PDU_TELEMETRY_UNKNOWN_I16;
+	WRITE_BIT(OD_telemetryValidity, 19, valid);
+	CO_UNLOCK_OD();
+}
+
+void pdu_telemetry_set_mcu_supply(uint16_t millivolts, bool valid)
+{
+	CO_LOCK_OD();
+	OD_mcuSupplyVoltage_mV = valid ? millivolts : PDU_TELEMETRY_UNKNOWN_U16;
+	WRITE_BIT(OD_telemetryValidity, 22, valid);
 	CO_UNLOCK_OD();
 }
 

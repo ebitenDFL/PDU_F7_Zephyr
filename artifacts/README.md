@@ -1,14 +1,16 @@
 # Firmware artifacts
 
-The functional 2026-11-12 A/B images are:
+The functional 2026-11-13 Zephyr 4.5.0 A/B images are:
 
 - `VIIALA_PDU1_V0_A001_DEV_KEY_BENCH_ONLY.bin`
 - `VIIALA_PDU1_V0_B001_DEV_KEY_BENCH_ONLY.bin`
 
-They include AD7490 current monitoring, configurable continuous/inrush
-protection, guarded output requests and volatile node-ID/bitrate configuration.
-Both compile inside the 64 KiB active slot, but have not yet had their new
-current/protection behavior electrically validated.
+They include AD7490 current monitoring, IN15 input-voltage monitoring,
+factory-calibrated STM32 die temperature and VDDA telemetry, configurable
+continuous/inrush protection, guarded output requests and volatile
+node-ID/bitrate configuration. Both compile inside the 64 KiB active slot.
+The A and B images were transferred and booted over CAN on the powered bench
+unit; B001 was left active with all output/request/fault bitmaps zero.
 
 **Bench use only:** these images use MCUboot's public development signing key.
 Do not use them for field or production deployment.

@@ -27,6 +27,9 @@
 #define AD7490_ZERO_OFFSET_COUNTS    6U
 #define CURRENT_DUMMY_READS          3U
 #define CURRENT_FILTER_SAMPLES      16U
+#define INPUT_VOLTAGE_CHANNEL       15U
+#define INPUT_DIVIDER_HIGH_OHM      100000U
+#define INPUT_DIVIDER_LOW_OHM        22000U
 
 static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(spi1));
 static const struct gpio_dt_spec adc_cs =
@@ -186,6 +189,32 @@ int pdu_adc_sample(uint16_t raw[PDU_OUTPUT_COUNT], uint16_t active_outputs)
 		}
 	}
 
+	return 0;
+}
+
+int pdu_adc_read_input_voltage(uint16_t *raw, uint16_t *millivolts)
+{
+	uint16_t sample;
+	uint64_t numerator;
+	uint32_t denominator;
+	int ret;
+
+	if (raw == NULL || millivolts == NULL) {
+		return -EINVAL;
+	}
+
+	ret = ad7490_read_current_filtered(INPUT_VOLTAGE_CHANNEL, &sample);
+	if (ret != 0) {
+		return ret;
+	}
+
+	numerator = (uint64_t)sample * AD7490_REFERENCE_MV *
+		    (INPUT_DIVIDER_HIGH_OHM + INPUT_DIVIDER_LOW_OHM);
+	denominator = AD7490_FULL_SCALE_COUNTS * INPUT_DIVIDER_LOW_OHM;
+
+	*raw = sample;
+	*millivolts = (uint16_t)MIN((numerator + denominator / 2U) / denominator,
+				      UINT16_MAX);
 	return 0;
 }
 

@@ -1,32 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project_dir=/home/dfl/Projects/PDU_F7_Zephyr
-west_dir=/home/dfl/zephyrproject
-zephyr_dir=/home/dfl/zephyrproject/zephyr
-layout_patch="$project_dir/patches/zephyr-stm32f722rc-256k-flash-layout.patch"
-driver_file=drivers/flash/flash_stm32f7x.c
+source "$(dirname -- "${BASH_SOURCE[0]}")/setup-env.sh"
+layout_patch="$pdu_root/patches/zephyr-stm32f722rc-256k-flash-layout.patch"
 
-if [[ -n "$(git -C "$zephyr_dir" status --short -- "$driver_file")" ]]; then
-	echo "Refusing to build: $driver_file already has local changes." >&2
+if ! git -C "$ZEPHYR_BASE" apply --reverse --check "$layout_patch"; then
+	echo "The STM32F722RC flash layout patch is required. See README.md." >&2
 	exit 2
 fi
 
-git -C "$zephyr_dir" apply "$layout_patch"
-cleanup() {
-	git -C "$zephyr_dir" apply -R "$layout_patch"
-}
-trap cleanup EXIT HUP INT TERM
-
-cd "$west_dir"
-source .venv/bin/activate
+cd -- "$PDU_WEST_WORKSPACE"
+module_args=()
+if [[ -n "${ZEPHYR_EXTRA_MODULES:-}" ]]; then
+	module_args+=("-DZEPHYR_EXTRA_MODULES=$ZEPHYR_EXTRA_MODULES")
+fi
 
 west build --sysbuild -p always -b speeder_pdu_f7/stm32f722xx \
-	"$project_dir" -d "$project_dir/build_update_a" -- \
-	-DBOARD_ROOT="$project_dir" -DEXTRA_CONF_FILE=variants/update_a.conf
+	"$pdu_root" -d "$pdu_root/build_update_a" -- \
+	-DBOARD_ROOT="$pdu_root" -DDTS_ROOT="$pdu_root" \
+	-DEXTRA_CONF_FILE=variants/update_a.conf "${module_args[@]}"
 
 west build --sysbuild -p always -b speeder_pdu_f7/stm32f722xx \
-	"$project_dir" -d "$project_dir/build_update_b" -- \
-	-DBOARD_ROOT="$project_dir" -DEXTRA_CONF_FILE=variants/update_b.conf
+	"$pdu_root" -d "$pdu_root/build_update_b" -- \
+	-DBOARD_ROOT="$pdu_root" -DDTS_ROOT="$pdu_root" \
+	-DEXTRA_CONF_FILE=variants/update_b.conf "${module_args[@]}"
 
 echo "Bench-signed A and B CANopen update images built successfully."

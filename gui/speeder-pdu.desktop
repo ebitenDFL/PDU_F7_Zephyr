@@ -2,8 +2,8 @@
 Type=Application
 Name=VIIALA PDU Workbench
 Comment=CANopen output control, diagnostics and firmware updates for VIIALA_PDU1_V0
-Exec=/home/dfl/Projects/PDU_F7_Zephyr/gui/run_pdu_gui.sh
+Exec=@PDU_GUI_EXEC@
 Icon=utilities-system-monitor
 Terminal=false
-Categories=Development;Utility;
+Categories=Development;
 StartupNotify=true

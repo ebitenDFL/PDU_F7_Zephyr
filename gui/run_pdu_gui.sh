@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-project_dir=/home/dfl/Projects/PDU_F7_Zephyr
+gui_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+if [[ "${1:-}" == --python ]]; then
+	python="${2:?--python requires a Python interpreter}"
+	shift 2
+else
+	source "$gui_dir/../scripts/setup-env.sh"
+	python=python3
+fi
+
+if ! "$python" -c 'import tkinter, can, canopen'; then
+	echo "The selected Python environment needs tkinter, python-can and canopen." >&2
+	echo "Set PDU_VENV to an environment with these dependencies, or reinstall the desktop entry." >&2
+	exit 1
+fi
+if [[ "${1:-}" == --check-dependencies ]]; then
+	exit 0
+fi
 can_interface="${PDU_CAN_IFACE:-can0}"
 can_bitrate="${PDU_CAN_BITRATE:-500000}"
 
@@ -25,13 +41,13 @@ fi
 # Leave an already-correct interface untouched. If configuration is needed,
 # use an existing passwordless sudo rule or request elevation graphically.
 set +e
-"$project_dir/gui/setup_can.sh" "$can_interface" "$can_bitrate"
+"$gui_dir/setup_can.sh" "$can_interface" "$can_bitrate"
 can_status=$?
 set -e
 if (( can_status == 77 )); then
-	if ! sudo -n "$project_dir/gui/setup_can.sh" "$can_interface" "$can_bitrate" 2>/dev/null; then
+	if ! sudo -n "$gui_dir/setup_can.sh" "$can_interface" "$can_bitrate" 2>/dev/null; then
 		if command -v pkexec >/dev/null 2>&1; then
-			pkexec "$project_dir/gui/setup_can.sh" "$can_interface" "$can_bitrate"
+			pkexec "$gui_dir/setup_can.sh" "$can_interface" "$can_bitrate"
 		else
 			echo "Administrator permission is required to start $can_interface." >&2
 			exit 1
@@ -42,5 +58,4 @@ elif (( can_status != 0 )); then
 	exit "$can_status"
 fi
 
-source /home/dfl/zephyrproject/.venv/bin/activate
-exec python3 "$project_dir/gui/pdu_gui.py"
+exec "$python" "$gui_dir/pdu_gui.py"

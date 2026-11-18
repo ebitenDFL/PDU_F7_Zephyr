@@ -5,21 +5,35 @@ the PEAK PCAN-USB adapter through `can0` at 500 kbit/s.
 
 ## Run
 
-Connect the PEAK adapter, then launch:
+Connect the PEAK adapter, then run this command from the repository root:
 
 ```sh
-/home/dfl/Projects/PDU_F7_Zephyr/gui/run_pdu_gui.sh
+./gui/run_pdu_gui.sh
 ```
 
 The launcher checks `can0` and leaves it untouched when it is already active at
 500 kbit/s. Otherwise it configures and starts the interface with automatic
 bus-off recovery. Linux may show one administrator-password prompt because CAN
 network configuration requires elevated permission. The launcher uses the
-existing Zephyr virtual environment, which already contains Python CANopen and
-SocketCAN support. No packages are installed by the GUI.
+Python environment selected by `scripts/setup-env.sh` and needs Tk and the
+Python `canopen` package. Set `PDU_VENV` to select an existing virtual
+environment, for example `PDU_VENV="$HOME/zephyrproject/.venv" ./gui/run_pdu_gui.sh`.
+
+To add the workbench to your desktop application menu, run this from the
+repository root:
+
+```sh
+bash gui/install_desktop.sh
+```
+
+The installer checks for Tk, `python-can` and `canopen` before writing
+`speeder-pdu.desktop` under `"${XDG_DATA_HOME:-$HOME/.local/share}/applications"`.
+Set `PDU_VENV` before installation if the dependencies are in a separate
+environment. The generated entry records the absolute launcher and interpreter
+paths. Rerun the installer after moving the checkout or changing environments.
 
 Advanced users can override the defaults with `PDU_CAN_IFACE` and
-`PDU_CAN_BITRATE`, for example `PDU_CAN_BITRATE=250000 run_pdu_gui.sh`.
+`PDU_CAN_BITRATE`, for example `PDU_CAN_BITRATE=250000 ./gui/run_pdu_gui.sh`.
 
 ## Features and safety boundary
 
@@ -47,8 +61,9 @@ replaced before field deployment.
 
 ## Test without hardware
 
+From the repository root in Bash:
+
 ```sh
-source /home/dfl/zephyrproject/.venv/bin/activate
-cd /home/dfl/Projects/PDU_F7_Zephyr/gui
-python3 -m unittest -v test_pdu_can.py
+source scripts/setup-env.sh
+python3 -m unittest discover -v -s gui -p test_pdu_can.py
 ```

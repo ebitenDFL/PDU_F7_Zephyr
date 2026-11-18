@@ -59,10 +59,10 @@ geometry does not provide two practical, symmetric application slots plus a
 bootloader. External flash or a larger MCU is recommended if automatic rollback
 is a requirement.
 
-Zephyr 4.4.99 lacks the STM32F722xC 256 KiB page layout. The project therefore
-contains `patches/zephyr-stm32f722rc-256k-flash-layout.patch` and a guarded build
-script which applies it only while compiling and reverses it on exit. The shared
-Zephyr checkout remains unchanged after the build.
+The Zephyr checkout used for the update build needs the STM32F722xC 256 KiB
+page layout from `patches/zephyr-stm32f722rc-256k-flash-layout.patch`.
+The build script checks that the patch is already applied. See the
+[build instructions](../README.md#build-with-pinned-zephyr-450).
 
 The update path was bench-tested again on 2026-11-13 using MCUboot RSA
 verification with MCUboot's published development key. It successfully

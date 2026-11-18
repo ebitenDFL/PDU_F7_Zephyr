@@ -2,7 +2,7 @@
 
 Verified on the Linux laptop on 2026-11-11.
 
-- Project: `/home/dfl/Projects/PDU_F7_Zephyr`
+- Project: `PDU_F7_Zephyr`
 - Zephyr: 4.4.99 (`v4.4.0-2681-g53689933c524`)
 - SDK/toolchain: Zephyr SDK 1.0.1, GCC 14.3.0
 - Board target: `speeder_pdu_f7/stm32f722xx`
@@ -277,9 +277,7 @@ loads in the 0.5–5 A range.
 
 # Zephyr 4.5.0 migration and CAN runtime verification
 
-Performed on 2026-11-13 using a new workspace at
-`/home/dfl/zephyrproject-4.5.0`. The historical Zephyr checkout and its local
-changes were not modified.
+Performed on 2026-11-13 using a dedicated Zephyr 4.5.0 workspace.
 
 - Zephyr: `v4.5.0` (`41d10b59730406bbab4ca9f1fbbe9e96aafb4966`)
 - SDK/toolchain: Zephyr SDK 1.0.1, GCC 14.3.0

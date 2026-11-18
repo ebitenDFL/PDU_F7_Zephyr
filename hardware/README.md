@@ -11,14 +11,15 @@ Milestone 1 is deliberately compile-only:
 - CAN, SPI, UART, flash writes, and storage are disabled;
 - there are no runner, flash, or debug commands in the project.
 
-## Build in the existing Linux Zephyr workspace
+## Build in a Linux Zephyr workspace
+
+Run from the repository root in Bash with the milestone firmware checked out.
+Set `PDU_WEST_WORKSPACE` to the compatible workspace before sourcing the
+environment helper. See the [top-level README](../README.md) for its options.
 
 ```sh
-source /home/dfl/zephyrproject/.venv/bin/activate
-export ZEPHYR_BASE=/home/dfl/zephyrproject/zephyr
-export ZEPHYR_SDK_INSTALL_DIR=/home/dfl/zephyr-sdk-1.0.1
-cd /home/dfl/Projects/PDU_F7_Zephyr
-cmake -S . -B build -GNinja -DBOARD=speeder_pdu_f7
+source scripts/setup-env.sh
+cmake -S . -B build -GNinja -DBOARD=speeder_pdu_f7/stm32f722xx
 cmake --build build
 ```
 
